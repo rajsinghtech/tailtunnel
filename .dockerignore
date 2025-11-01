@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.*
+
+# Documentation
+README.md
+*.md
+
+# Build artifacts
+tailtunnel
+tailtunnel-state/
+/var/lib/tailtunnel/
+
+# Node
+node_modules/
+frontend/.svelte-kit/
+frontend/dist/
+.npm
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Go
+*.test
+*.out
+
+# Build
+build/
+dist/
+
+# Makefile (not needed in container)
+Makefile
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore

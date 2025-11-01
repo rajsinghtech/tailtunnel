@@ -1,0 +1,25 @@
+services:
+  tailtunnel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tailtunnel
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - PORT=8080
+      - STATE_DIR=/var/lib/tailtunnel
+    volumes:
+      # Persist Tailscale state
+      - tailtunnel-state:/var/lib/tailtunnel
+    # Required for Tailscale to work properly
+    cap_add:
+      - NET_ADMIN
+    # Use host network for better Tailscale integration (optional)
+    # network_mode: host
+
+volumes:
+  tailtunnel-state:
+    driver: local
