@@ -6,13 +6,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rajsinghtech/tailtunnel/internal/canary"
 	"github.com/rajsinghtech/tailtunnel/internal/ssh"
 	"github.com/rajsinghtech/tailtunnel/internal/tailscale"
 )
 
 type Handler struct {
-	ts         *tailscale.TailscaleClient
-	sshHandler *ssh.SSHHandler
+	ts            *tailscale.TailscaleClient
+	sshHandler    *ssh.SSHHandler
+	canaryHandler *canary.Handler
 }
 
 func NewHandler(ts *tailscale.TailscaleClient) *Handler {
@@ -21,6 +23,7 @@ func NewHandler(ts *tailscale.TailscaleClient) *Handler {
 		sshHandler: &ssh.SSHHandler{
 			DialFunc: ts.DialSSH,
 		},
+		canaryHandler: canary.NewHandler(ts.LocalClient()),
 	}
 }
 

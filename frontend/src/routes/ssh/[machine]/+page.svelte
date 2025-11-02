@@ -3,8 +3,7 @@
 	import { page } from '$app/stores';
 
 	const machine = $derived($page.params.machine);
-	const userParam = $derived($page.url.searchParams.get('user'));
-	const user = (userParam || 'root') as string;
+	const user = $derived(($page.url.searchParams.get('user') || 'root') as string);
 	const pageTitle = $derived(`SSH: ${user}@${machine} - TailTunnel`);
 </script>
 

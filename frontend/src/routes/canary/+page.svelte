@@ -188,21 +188,25 @@
 	<title>TailCanary - Network Diagnostics - TailTunnel</title>
 </svelte:head>
 
-<div class="container mx-auto p-4 md:p-6">
-	<div class="mb-6">
-		<div class="flex items-center justify-between mb-4">
-			<div>
-				<h1 class="text-2xl md:text-3xl font-bold">TailCanary</h1>
-				<p class="text-sm md:text-base text-muted-foreground mt-1">Network Diagnostics</p>
+<div class="min-h-screen bg-background">
+	<div class="border-b bg-card">
+		<div class="container mx-auto p-4">
+			<div class="flex items-center justify-between mb-4">
+				<div>
+					<a href="/" class="text-sm text-muted-foreground hover:text-foreground">
+						← Back to machines
+					</a>
+					<h1 class="text-2xl font-bold mt-1">TailCanary</h1>
+					<p class="text-sm text-muted-foreground">Network Diagnostics</p>
+				</div>
+				<div class="flex items-center gap-2">
+					{#if lastUpdate}
+						<span class="text-sm text-muted-foreground">
+							Last updated: {getTimeSince(lastUpdate)}
+						</span>
+					{/if}
+				</div>
 			</div>
-			<div class="flex items-center gap-2">
-				{#if lastUpdate}
-					<span class="text-sm text-muted-foreground">
-						Last updated: {getTimeSince(lastUpdate)}
-					</span>
-				{/if}
-			</div>
-		</div>
 
 			<div class="flex items-center gap-2">
 				<button
@@ -238,78 +242,81 @@
 				{/if}
 			</div>
 		</div>
+	</div>
 
-	{#if error}
-		<div class="rounded-lg bg-red-50 dark:bg-red-950 p-4 text-red-800 dark:text-red-200 mb-4">
-			{error}
-		</div>
-	{/if}
+	<div class="container mx-auto p-4">
+		{#if error}
+			<div class="rounded-lg bg-red-50 dark:bg-red-950 p-4 text-red-800 dark:text-red-200 mb-4">
+				{error}
+			</div>
+		{/if}
 
-	{#if !error && peers.length > 0 && filteredPingHistory().size > 0}
-		<div class="mb-6">
-			<LatencyChart pingHistory={filteredPingHistory()} />
-		</div>
-	{/if}
+		{#if !error && peers.length > 0 && filteredPingHistory().size > 0}
+			<div class="mb-6">
+				<LatencyChart pingHistory={filteredPingHistory()} />
+			</div>
+		{/if}
 
-	{#if !error && peers.length > 0}
-		<div class="mb-6">
-			<div class="relative">
-				<input
-					type="text"
-					bind:value={searchQuery}
-					placeholder="Search by name, IP, user, OS, tag, status (online, offline), or connection type (direct, derp, peer-relay)..."
-					class="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-				/>
-				{#if searchQuery}
-					<button
-						onclick={() => searchQuery = ''}
-						aria-label="Clear search"
-						class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<line x1="18" y1="6" x2="6" y2="18"></line>
-							<line x1="6" y1="6" x2="18" y2="18"></line>
-						</svg>
-					</button>
+		{#if !error && peers.length > 0}
+			<div class="mb-6">
+				<div class="relative">
+					<input
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Search by name, IP, user, OS, tag, status (online, offline), or connection type (direct, derp, peer-relay)..."
+						class="w-full rounded-md border border-input bg-background px-4 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+					/>
+					{#if searchQuery}
+						<button
+							onclick={() => searchQuery = ''}
+							aria-label="Clear search"
+							class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<line x1="18" y1="6" x2="6" y2="18"></line>
+								<line x1="6" y1="6" x2="18" y2="18"></line>
+							</svg>
+						</button>
+					{/if}
+				</div>
+				{#if searchQuery && filteredPeers().length > 0}
+					<p class="mt-2 text-sm text-muted-foreground">
+						Found {filteredPeers().length} peer{filteredPeers().length === 1 ? '' : 's'}
+					</p>
 				{/if}
 			</div>
-			{#if searchQuery && filteredPeers().length > 0}
-				<p class="mt-2 text-sm text-muted-foreground">
-					Found {filteredPeers().length} peer{filteredPeers().length === 1 ? '' : 's'}
+		{/if}
+
+		{#if loading}
+			<div class="text-center py-8">
+				<p class="text-muted-foreground">Loading peers...</p>
+			</div>
+		{:else if peers.length === 0}
+			<div class="text-center py-8">
+				<p class="text-muted-foreground">No peers found</p>
+			</div>
+		{:else if filteredPeers().length === 0}
+			<div class="text-center py-8">
+				<p class="text-muted-foreground">No peers match your search</p>
+			</div>
+		{:else}
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{#each filteredPeers() as peer (peer.ip)}
+					<CanaryPeerCard {peer} pingResult={pingResults.get(peer.ip)} />
+				{/each}
+			</div>
+
+			<div class="mt-6 text-sm text-muted-foreground">
+				<p class="font-semibold mb-2">Connection Types:</p>
+				<ul class="space-y-1 mb-4">
+					<li><span class="text-green-600 dark:text-green-400 font-semibold">● Direct</span> - Direct peer-to-peer UDP connection (fastest, &lt;10ms typical)</li>
+					<li><span class="text-yellow-600 dark:text-yellow-400 font-semibold">⚡ DERP Relay</span> - Relayed through Tailscale server (may upgrade to direct in ~5-30s)</li>
+					<li><span class="text-blue-600 dark:text-blue-400 font-semibold">🔄 Peer Relay</span> - Relayed through another peer node</li>
+				</ul>
+				<p class="text-xs italic">
+					Note: Connections initially use DERP relay during discovery, then automatically upgrade to direct paths when possible. This is normal behavior.
 				</p>
-			{/if}
-		</div>
-	{/if}
-
-	{#if loading}
-		<div class="text-center py-8">
-			<p class="text-muted-foreground">Loading peers...</p>
-		</div>
-	{:else if peers.length === 0}
-		<div class="text-center py-8">
-			<p class="text-muted-foreground">No peers found</p>
-		</div>
-	{:else if filteredPeers().length === 0}
-		<div class="text-center py-8">
-			<p class="text-muted-foreground">No peers match your search</p>
-		</div>
-	{:else}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-			{#each filteredPeers() as peer (peer.ip)}
-				<CanaryPeerCard {peer} pingResult={pingResults.get(peer.ip)} />
-			{/each}
-		</div>
-
-		<div class="mt-6 text-sm text-muted-foreground">
-			<p class="font-semibold mb-2">Connection Types:</p>
-			<ul class="space-y-1 mb-4">
-				<li><span class="text-green-600 dark:text-green-400 font-semibold">● Direct</span> - Direct peer-to-peer UDP connection (fastest, &lt;10ms typical)</li>
-				<li><span class="text-yellow-600 dark:text-yellow-400 font-semibold">⚡ DERP Relay</span> - Relayed through Tailscale server (may upgrade to direct in ~5-30s)</li>
-				<li><span class="text-blue-600 dark:text-blue-400 font-semibold">🔄 Peer Relay</span> - Relayed through another peer node</li>
-			</ul>
-			<p class="text-xs italic">
-				Note: Connections initially use DERP relay during discovery, then automatically upgrade to direct paths when possible. This is normal behavior.
-			</p>
-		</div>
-	{/if}
+			</div>
+		{/if}
+	</div>
 </div>

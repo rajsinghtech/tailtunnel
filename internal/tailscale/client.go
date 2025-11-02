@@ -47,6 +47,10 @@ func (tc *TailscaleClient) DialSSH(ctx context.Context, machine string) (net.Con
 	return tc.server.Dial(ctx, "tcp", machine+":22")
 }
 
+func (tc *TailscaleClient) LocalClient() *tailscale.LocalClient {
+	return tc.lc
+}
+
 func (tc *TailscaleClient) Close() error {
 	return tc.server.Close()
 }

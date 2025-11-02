@@ -22,6 +22,12 @@ func NewRouter(h *Handler, frontendFS embed.FS) http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/machines", h.GetMachines)
 		r.Get("/ws/ssh/{machine}", h.SSHWebSocket)
+
+		r.Route("/canary", func(r chi.Router) {
+			r.Get("/peers", h.canaryHandler.GetPeers)
+			r.Post("/ping", h.canaryHandler.Ping)
+			r.Post("/ping-all", h.canaryHandler.PingAll)
+		})
 	})
 
 	frontendDist, err := fs.Sub(frontendFS, "frontend/dist")
