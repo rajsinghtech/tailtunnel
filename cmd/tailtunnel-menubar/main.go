@@ -5,12 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -21,16 +18,16 @@ import (
 )
 
 type Settings struct {
-	AuthKey  string `json:"authKey"`
+	Hostname string `json:"hostname"`
 	StateDir string `json:"stateDir"`
-	Port     int    `json:"port"`
+	AuthKey  string `json:"authKey,omitempty"` // Optional - for backwards compat
 }
 
 var (
-	settings     *Settings
-	srv          *http.Server
-	ts           *tailscale.TailscaleClient
+	settings      *Settings
+	ts            *tailscale.TailscaleClient
 	serverRunning bool
+	loginInProgress bool
 )
 
 func main() {
@@ -39,40 +36,94 @@ func main() {
 
 func onReady() {
 	systray.SetTitle("TailTunnel")
-	systray.SetTooltip("TailTunnel - Tailscale Toolkit")
+	systray.SetTooltip("TailTunnel - Not Connected")
 
 	loadSettings()
 
-	mOpen := systray.AddMenuItem("Open Dashboard", "Open TailTunnel in browser")
+	mStatus := systray.AddMenuItem("Status: Checking...", "Connection status")
+	mStatus.Disable()
 	systray.AddSeparator()
-	mStart := systray.AddMenuItem("Start Server", "Start the TailTunnel server")
-	mStop := systray.AddMenuItem("Stop Server", "Stop the TailTunnel server")
-	mStop.Disable()
+
+	mLogin := systray.AddMenuItem("Login to Tailscale", "Authenticate with Tailscale")
+	mLogout := systray.AddMenuItem("Logout", "Disconnect from Tailscale")
+	mLogout.Hide()
+
+	systray.AddSeparator()
+	mOpen := systray.AddMenuItem("Open Dashboard", "Open TailTunnel in browser")
+	mOpen.Disable()
+
 	systray.AddSeparator()
 	mSettings := systray.AddMenuItem("Settings...", "Configure TailTunnel")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit", "Quit TailTunnel")
 
+	// Auto-start server
+	go func() {
+		if err := startServer(); err != nil {
+			log.Printf("Failed to start server: %v", err)
+			mStatus.SetTitle("Status: Failed to start")
+		}
+	}()
+
 	go func() {
 		for {
 			select {
+			case <-mLogin.ClickedCh:
+				if !loginInProgress {
+					go handleLogin()
+				}
+			case <-mLogout.ClickedCh:
+				handleLogout()
+				mLogin.Show()
+				mLogout.Hide()
+				mOpen.Disable()
+				mStatus.SetTitle("Status: Logged Out")
 			case <-mOpen.ClickedCh:
 				openDashboard()
-			case <-mStart.ClickedCh:
-				if startServer() {
-					mStart.Disable()
-					mStop.Enable()
-					systray.SetTooltip("TailTunnel - Running")
-				}
-			case <-mStop.ClickedCh:
-				stopServer()
-				mStart.Enable()
-				mStop.Disable()
-				systray.SetTooltip("TailTunnel - Stopped")
 			case <-mSettings.ClickedCh:
 				openSettings()
 			case <-mQuit.ClickedCh:
 				systray.Quit()
+			}
+		}
+	}()
+
+	// Monitor status
+	go func() {
+		for {
+			time.Sleep(3 * time.Second)
+			if ts != nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				status, err := ts.Status(ctx)
+				cancel()
+
+				if err == nil && status != nil {
+					if status.BackendState == "Running" {
+						fqdn := status.Self.DNSName
+						mStatus.SetTitle(fmt.Sprintf("Status: Connected (%s)", fqdn))
+						systray.SetTooltip(fmt.Sprintf("TailTunnel - Connected to %s", fqdn))
+						mOpen.Enable()
+						mLogin.Hide()
+						mLogout.Show()
+						serverRunning = true
+					} else {
+						mStatus.SetTitle(fmt.Sprintf("Status: %s", status.BackendState))
+					}
+				}
+			}
+		}
+	}()
+
+	// Monitor for auth URLs
+	go func() {
+		if ts == nil {
+			return
+		}
+		for authURL := range ts.AuthURL() {
+			showInfo("Tailscale Login Required",
+				fmt.Sprintf("Opening browser to complete login...\n\n%s", authURL))
+			if err := browser.OpenURL(authURL); err != nil {
+				log.Printf("Failed to open browser: %v", err)
 			}
 		}
 	}()
@@ -133,86 +184,114 @@ func saveSettings() error {
 func getDefaultSettings() *Settings {
 	homeDir, _ := os.UserHomeDir()
 	return &Settings{
+		Hostname: "tailtunnel",
 		StateDir: filepath.Join(homeDir, ".tailtunnel", "state"),
-		Port:     8080,
 	}
 }
 
-func startServer() bool {
+func startServer() error {
 	if serverRunning {
-		return true
+		return nil
 	}
-
-	if settings.AuthKey == "" {
-		showError("Auth Key Required", "Please configure your Tailscale auth key in Settings.\n\nGet one from: https://login.tailscale.com/admin/settings/keys")
-		return false
-	}
-
-	os.Setenv("TS_AUTHKEY", settings.AuthKey)
-	os.Setenv("STATE_DIR", settings.StateDir)
-	os.Setenv("PORT", fmt.Sprintf("%d", settings.Port))
 
 	var err error
-	ts, err = tailscale.NewTailscaleClient()
+	ts, err = tailscale.NewTailscaleClientWithConfig(tailscale.Config{
+		Hostname: settings.Hostname,
+		StateDir: settings.StateDir,
+		AuthKey:  settings.AuthKey,
+		Verbose:  true,
+	})
 	if err != nil {
-		showError("Failed to Start", fmt.Sprintf("Failed to initialize Tailscale client: %v", err))
-		return false
+		return fmt.Errorf("failed to initialize Tailscale client: %w", err)
 	}
 
 	handler := api.NewHandler(ts)
 	router := api.NewRouter(handler, tailtunnel.FrontendFS)
 
-	srv = &http.Server{
-		Addr:         fmt.Sprintf(":%d", settings.Port),
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
+	// Start server on tailnet (with HTTPS if available)
 	go func() {
-		log.Printf("Server listening on http://localhost:%d", settings.Port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Println("Starting server on tailnet...")
+		if err := ts.ListenHTTPS(router); err != nil {
 			log.Printf("Server error: %v", err)
 			serverRunning = false
 		}
 	}()
 
-	time.Sleep(500 * time.Millisecond)
-	serverRunning = true
-	return true
+	return nil
 }
 
 func stopServer() {
-	if !serverRunning {
-		return
-	}
-
-	if srv != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		srv.Shutdown(ctx)
-		srv = nil
-	}
-
 	if ts != nil {
 		ts.Close()
 		ts = nil
 	}
-
 	serverRunning = false
 }
 
-func openDashboard() {
-	if !serverRunning {
-		if !startServer() {
+func handleLogin() {
+	loginInProgress = true
+	defer func() { loginInProgress = false }()
+
+	if ts == nil {
+		if err := startServer(); err != nil {
+			showError("Login Failed", fmt.Sprintf("Failed to start: %v", err))
 			return
 		}
 	}
 
-	url := fmt.Sprintf("http://localhost:%d", settings.Port)
+	showInfo("Logging in...", "Waiting for Tailscale authentication...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	if err := ts.WaitForLogin(ctx); err != nil {
+		showError("Login Failed", fmt.Sprintf("Authentication failed: %v", err))
+		return
+	}
+
+	showInfo("Login Successful", "You are now connected to your Tailscale network!")
+}
+
+func handleLogout() {
+	if ts == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := ts.Logout(ctx); err != nil {
+		showError("Logout Failed", fmt.Sprintf("Failed to logout: %v", err))
+		return
+	}
+
+	stopServer()
+	showInfo("Logged Out", "You have been logged out of Tailscale.")
+}
+
+func openDashboard() {
+	if ts == nil || !serverRunning {
+		showError("Not Connected", "Please login to Tailscale first.")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	status, err := ts.Status(ctx)
+	cancel()
+
+	if err != nil || status == nil {
+		showError("Error", "Failed to get connection status")
+		return
+	}
+
+	// Try HTTPS first
+	url := fmt.Sprintf("https://%s", status.Self.DNSName)
 	if err := browser.OpenURL(url); err != nil {
-		showError("Failed to Open Browser", fmt.Sprintf("Could not open browser: %v\n\nPlease visit: %s", err, url))
+		// Fallback to HTTP
+		url = fmt.Sprintf("http://%s", status.Self.DNSName)
+		if err := browser.OpenURL(url); err != nil {
+			showError("Failed to Open Browser", fmt.Sprintf("Could not open browser: %v\n\nPlease visit: %s", err, url))
+		}
 	}
 }
 
@@ -220,10 +299,10 @@ func openSettings() {
 	script := fmt.Sprintf(`
 tell application "System Events"
 	activate
-	set authKey to text returned of (display dialog "Enter your Tailscale Auth Key:" default answer "%s" with title "TailTunnel Settings")
-	return authKey
+	set hostname to text returned of (display dialog "Enter TailTunnel hostname:" default answer "%s" with title "TailTunnel Settings")
+	return hostname
 end tell
-`, settings.AuthKey)
+`, settings.Hostname)
 
 	cmd := exec.Command("osascript", "-e", script)
 	output, err := cmd.CombinedOutput()
@@ -231,14 +310,14 @@ end tell
 		return
 	}
 
-	newAuthKey := string(output)
-	if newAuthKey != "" && newAuthKey != "\n" {
-		newAuthKey = newAuthKey[:len(newAuthKey)-1] // Remove trailing newline
-		settings.AuthKey = newAuthKey
+	newHostname := string(output)
+	if newHostname != "" && newHostname != "\n" {
+		newHostname = newHostname[:len(newHostname)-1] // Remove trailing newline
+		settings.Hostname = newHostname
 		if err := saveSettings(); err != nil {
 			showError("Save Failed", fmt.Sprintf("Failed to save settings: %v", err))
 		} else {
-			showInfo("Settings Saved", "Your auth key has been saved. Restart the server for changes to take effect.")
+			showInfo("Settings Saved", "Hostname updated. Please logout and login again for changes to take effect.")
 		}
 	}
 }
@@ -259,14 +338,4 @@ tell application "System Events"
 end tell
 `, message, title)
 	exec.Command("osascript", "-e", script).Run()
-}
-
-func init() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		onExit()
-		os.Exit(0)
-	}()
 }

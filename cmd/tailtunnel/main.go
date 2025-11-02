@@ -1,13 +1,10 @@
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/rajsinghtech/tailtunnel"
 	"github.com/rajsinghtech/tailtunnel/internal/api"
@@ -25,25 +22,23 @@ func main() {
 
 	log.Println("Tailscale client initialized")
 
+	// Monitor for auth URLs and automatically open browser
+	go func() {
+		for authURL := range ts.AuthURL() {
+			log.Printf("\n\n=================================")
+			log.Printf("Tailscale Login Required!")
+			log.Printf("Opening browser to: %s", authURL)
+			log.Printf("=================================\n\n")
+		}
+	}()
+
 	handler := api.NewHandler(ts)
 	router := api.NewRouter(handler, tailtunnel.FrontendFS)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	srv := &http.Server{
-		Addr:         ":" + port,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
+	// Serve on tailnet with HTTPS (if available)
 	go func() {
-		log.Printf("Server listening on :%s", port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Println("Starting server on Tailscale network...")
+		if err := ts.ListenHTTPS(router); err != nil {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
@@ -53,13 +48,5 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
-	}
-
 	log.Println("Server stopped")
 }
