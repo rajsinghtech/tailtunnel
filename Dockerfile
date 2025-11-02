@@ -5,11 +5,13 @@ WORKDIR /app/frontend
 
 # Copy package files for better caching
 COPY frontend/package*.json ./
-RUN npm install --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --legacy-peer-deps
 
 # Copy source and build
 COPY frontend/ ./
-RUN npm run build
+RUN --mount=type=cache,target=/root/.npm \
+    npm run build
 
 # Stage 2: Build backend
 FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS backend-builder
