@@ -66,7 +66,12 @@ tailtunnel
 
 The easiest way to run TailTunnel on macOS is with our native menu bar app:
 
-**Option 1: Download Release**
+**Option 1: Homebrew Cask (Recommended)**
+```bash
+brew install --cask rajsinghtech/tap/tailtunnel
+```
+
+**Option 2: Download Release**
 1. Download `TailTunnel.zip` from the [latest release](https://github.com/rajsinghtech/tailtunnel/releases/latest)
 2. Unzip and drag `TailTunnel.app` to your `/Applications` folder
 3. Remove Gatekeeper quarantine (app is unsigned):
@@ -77,7 +82,7 @@ The easiest way to run TailTunnel on macOS is with our native menu bar app:
 
 > **Note:** If you see a "damaged" error, run the `xattr` command above to bypass macOS Gatekeeper.
 
-**Option 2: Build from Source**
+**Option 3: Build from Source**
 ```bash
 git clone https://github.com/rajsinghtech/tailtunnel.git
 cd tailtunnel

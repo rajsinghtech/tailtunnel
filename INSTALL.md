@@ -14,7 +14,18 @@ TailTunnel is available as a native macOS menu bar application. The app runs in 
 
 ### Installation
 
-#### Option 1: Download Release
+#### Option 1: Homebrew Cask (Recommended)
+
+```bash
+brew install --cask rajsinghtech/tap/tailtunnel
+```
+
+This automatically:
+- Downloads and installs the app to `/Applications/`
+- Removes the Gatekeeper quarantine flag
+- Keeps the app updated with `brew upgrade`
+
+#### Option 2: Download Release
 
 1. Download `TailTunnel.zip` from the [latest release](https://github.com/rajsinghtech/tailtunnel/releases/latest)
 2. Unzip the file
@@ -27,7 +38,7 @@ TailTunnel is available as a native macOS menu bar application. The app runs in 
 
 **Note:** TailTunnel is currently unsigned. The `xattr -cr` command removes the quarantine flag that macOS adds to downloaded apps, allowing it to run. If you see a "damaged" error, this is macOS Gatekeeper blocking the unsigned app - the command above fixes this.
 
-#### Option 2: Build from Source
+#### Option 3: Build from Source
 
 ```bash
 git clone https://github.com/rajsinghtech/tailtunnel.git

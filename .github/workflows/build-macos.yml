@@ -57,6 +57,12 @@ jobs:
 
             ### Installation
 
+            **Option 1: Homebrew Cask (Easiest)**
+            ```bash
+            brew install --cask rajsinghtech/tap/tailtunnel
+            ```
+
+            **Option 2: Manual Download**
             1. Download `TailTunnel.zip`
             2. Unzip the file
             3. Drag `TailTunnel.app` to your `/Applications` folder
@@ -88,3 +94,56 @@ jobs:
             ```
 
             See the [README](https://github.com/${{ github.repository }}) for more installation options.
+
+      - name: Update Homebrew Cask
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          SHA256=$(cat TailTunnel.zip.sha256 | awk '{print $1}')
+
+          # Clone the tap repository
+          git clone https://${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}@github.com/rajsinghtech/homebrew-tap.git
+          cd homebrew-tap
+
+          # Create Casks directory if it doesn't exist
+          mkdir -p Casks
+
+          # Update the cask file
+          cat > Casks/tailtunnel.rb <<EOF
+          cask "tailtunnel" do
+            version "${VERSION}"
+            sha256 "${SHA256}"
+
+            url "https://github.com/rajsinghtech/tailtunnel/releases/download/v#{version}/TailTunnel.zip"
+            name "TailTunnel"
+            desc "Web dashboard for Tailscale with browser-based SSH and network diagnostics"
+            homepage "https://github.com/rajsinghtech/tailtunnel"
+
+            livecheck do
+              url :url
+              strategy :github_latest
+            end
+
+            app "TailTunnel.app"
+
+            postflight do
+              system_command "/usr/bin/xattr",
+                             args: ["-cr", "#{appdir}/TailTunnel.app"],
+                             sudo: false
+            end
+
+            zap trash: "~/.tailtunnel"
+          end
+          EOF
+
+          # Configure git
+          git config user.name "GitHub Actions"
+          git config user.email "rajsinghcpre@gmail.com"
+
+          # Commit and push
+          git add Casks/tailtunnel.rb
+          git commit -m "Update tailtunnel cask to ${VERSION}"
+          git push
