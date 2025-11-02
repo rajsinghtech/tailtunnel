@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rajsinghtech/tailtunnel/internal/canary"
+	"github.com/rajsinghtech/tailtunnel/internal/diagnostics"
 	"github.com/rajsinghtech/tailtunnel/internal/ssh"
 	"github.com/rajsinghtech/tailtunnel/internal/tailscale"
 )
@@ -52,4 +53,16 @@ func (h *Handler) SSHWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sshHandler.HandleWebSocket(w, r, machine, user)
+}
+
+func (h *Handler) GetDiagnostics(w http.ResponseWriter, r *http.Request) {
+	diag, err := diagnostics.GetDiagnostics(r.Context(), h.ts.LocalClient())
+	if err != nil {
+		log.Printf("Failed to get diagnostics: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(diag)
 }

@@ -22,6 +22,7 @@ func NewRouter(h *Handler, frontendFS embed.FS) http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/machines", h.GetMachines)
 		r.Get("/ws/ssh/{machine}", h.SSHWebSocket)
+		r.Get("/diagnostics", h.GetDiagnostics)
 
 		r.Route("/canary", func(r chi.Router) {
 			r.Get("/peers", h.canaryHandler.GetPeers)

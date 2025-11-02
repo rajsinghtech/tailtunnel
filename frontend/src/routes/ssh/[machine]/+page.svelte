@@ -11,11 +11,11 @@
 	<title>{pageTitle}</title>
 </svelte:head>
 
-<div class="flex h-screen flex-col">
+<div class="flex h-[calc(100vh-57px)] md:h-screen flex-col">
 	<div class="border-b bg-card p-4">
 		<div class="container mx-auto flex items-center justify-between">
 			<div>
-				<a href="/" class="text-sm text-muted-foreground hover:text-foreground">
+				<a href="/machines" class="text-sm text-muted-foreground hover:text-foreground">
 					← Back to machines
 				</a>
 				<h2 class="text-xl font-semibold mt-1">SSH: {user}@{machine}</h2>

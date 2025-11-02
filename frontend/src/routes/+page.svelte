@@ -42,6 +42,14 @@
 		pinging = true;
 		error = '';
 		try {
+			// If search is active, only ping filtered peers
+			const peersToCheck = searchQuery.trim() ? filteredPeers() : peers;
+
+			if (peersToCheck.length === 0) {
+				pinging = false;
+				return;
+			}
+
 			const response = await fetch('/api/canary/ping-all', {
 				method: 'POST'
 			});
@@ -53,28 +61,34 @@
 			const newResults = new Map<string, PingResult>();
 			const timestamp = new Date(data.timestamp);
 
+			// Create a set of IPs we want to update (filtered peers if search is active)
+			const targetIPs = new Set(peersToCheck.map(p => p.ip));
+
 			for (const result of data.results) {
-				newResults.set(result.ip, result);
+				// Only update results for filtered peers when search is active
+				if (!searchQuery.trim() || targetIPs.has(result.ip)) {
+					newResults.set(result.ip, result);
 
-				// Update history for successful pings
-				if (result.success) {
-					const peer = peers.find(p => p.ip === result.ip);
-					if (peer) {
-						const hostKey = peer.hostName;
-						const history = pingHistory.get(hostKey) || [];
+					// Update history for successful pings
+					if (result.success) {
+						const peer = peers.find(p => p.ip === result.ip);
+						if (peer) {
+							const hostKey = peer.hostName;
+							const history = pingHistory.get(hostKey) || [];
 
-						history.push({
-							timestamp,
-							latency: result.latencyMs,
-							connectionType: result.connectionType
-						});
+							history.push({
+								timestamp,
+								latency: result.latencyMs,
+								connectionType: result.connectionType
+							});
 
-						// Keep only last MAX_HISTORY_POINTS
-						if (history.length > MAX_HISTORY_POINTS) {
-							history.shift();
+							// Keep only last MAX_HISTORY_POINTS
+							if (history.length > MAX_HISTORY_POINTS) {
+								history.shift();
+							}
+
+							pingHistory.set(hostKey, history);
 						}
-
-						pingHistory.set(hostKey, history);
 					}
 				}
 			}
@@ -190,21 +204,12 @@
 
 <div class="container mx-auto p-4 md:p-6">
 	<div class="mb-6">
-		<div class="flex items-center justify-between mb-4">
-			<div>
-				<h1 class="text-2xl md:text-3xl font-bold">TailCanary</h1>
-				<p class="text-sm md:text-base text-muted-foreground mt-1">Network Diagnostics</p>
-			</div>
-			<div class="flex items-center gap-2">
-				{#if lastUpdate}
-					<span class="text-sm text-muted-foreground">
-						Last updated: {getTimeSince(lastUpdate)}
-					</span>
-				{/if}
-			</div>
+		<div class="mb-4">
+			<h1 class="text-2xl md:text-3xl font-bold">TailCanary</h1>
+			<p class="text-sm md:text-base text-muted-foreground mt-1">Network Diagnostics</p>
 		</div>
 
-			<div class="flex items-center gap-2">
+		<div class="flex items-center gap-2">
 				<button
 					onclick={refresh}
 					disabled={loading || pinging}
@@ -233,7 +238,7 @@
 
 				{#if pinging}
 					<span class="text-sm text-muted-foreground animate-pulse">
-						Pinging {peers.length} peers...
+						Pinging {filteredPeers().length} peer{filteredPeers().length === 1 ? '' : 's'}...
 					</span>
 				{/if}
 			</div>
@@ -294,7 +299,7 @@
 			<p class="text-muted-foreground">No peers match your search</p>
 		</div>
 	{:else}
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
 			{#each filteredPeers() as peer (peer.ip)}
 				<CanaryPeerCard {peer} pingResult={pingResults.get(peer.ip)} />
 			{/each}
