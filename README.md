@@ -5,37 +5,38 @@
 </p>
 
 <p align="center">
-  <strong>SSH into your Tailscale machines from your browser</strong>
+  <strong>Your Tailscale Toolkit - SSH and Network Diagnostics in Your Browser</strong>
 </p>
 
 <p align="center">
-  TailTunnel gives you a beautiful web interface to manage and connect to all your Tailscale machines with SSH enabled.<br>
-  No more remembering hostnames or IP addresses - just click and connect.
+  TailTunnel gives you a beautiful web interface to manage your Tailscale network.<br>
+  Browser-based SSH, real-time network diagnostics, and connection monitoring - all in one place.
 </p>
 
 ---
 
 ## What is TailTunnel?
 
-TailTunnel is a web dashboard that shows all your SSH-enabled Tailscale machines in one place. Click on any machine to open a terminal session directly in your browser.
+TailTunnel is a web dashboard for your Tailscale network. Connect to machines via SSH directly in your browser, monitor network health with TailCanary, and see real-time connection quality across your entire tailnet.
 
 ### Key Features
 
-- **Auto-discovery** - Automatically finds all SSH-enabled machines on your tailnet
-- **Visual dashboard** - See all your machines with their current status
-- **Quick search** - Filter machines by name, user, or tag
-- **Browser-based terminal** - Full terminal access without leaving your browser
-- **Responsive design** - Works on desktop, tablet, and mobile
-- **Secure** - Uses Tailscale's zero-trust security model
+- **Browser SSH** - Full terminal access without leaving your browser
+- **TailCanary Network Diagnostics** - Real-time ping monitoring with latency graphs
+- **Connection Type Detection** - See if peers are using direct, DERP relay, or peer relay connections
+- **Auto-discovery** - Automatically finds all machines on your tailnet
+- **Live Monitoring** - Continuous network health checks with automatic refresh
+- **Device Info** - View NAT type, online status, and system information
+- **Quick Search** - Filter machines by name, user, tag, or connection type
+- **Responsive Design** - Works on desktop, tablet, and mobile
 
 ### What You Get
 
-- Tiled grid view of all your machines
-- Real-time online/offline status
-- Machine tags for organization
-- User ownership information
-- One-click SSH connections
-- Full terminal functionality in your browser
+- **SSH Machines**: Tiled grid view with one-click terminal access
+- **TailCanary**: Network diagnostics with latency tracking and connection type visualization
+- **Real-time Status**: Live online/offline status and connection quality
+- **Historical Data**: Latency graphs showing connection performance over time
+- **Smart Filtering**: Search across all attributes including connection types
 
 ---
 
@@ -69,7 +70,9 @@ Open your browser and go to:
 http://localhost:8080
 ```
 
-You'll see all your SSH-enabled machines. Click "Connect SSH" on any machine to start a terminal session.
+You'll see two main features:
+- **TailCanary**: Real-time network diagnostics with ping monitoring and latency graphs
+- **SSH Machines**: All your SSH-enabled machines with one-click terminal access
 
 ---
 
@@ -148,155 +151,3 @@ TailTunnel is configured using environment variables:
 
 You only need the auth key on the first run. After that, TailTunnel remembers your connection.
 
----
-
-## Requirements
-
-### For Running (Docker)
-- Docker installed
-- Tailscale account
-- At least one SSH-enabled machine on your tailnet
-
-### For Building from Source
-- Go 1.25 or later
-- Node.js 20 or later
-- npm
-
-### Supported Platforms
-- Linux (amd64, arm64)
-- macOS (amd64, arm64)
-- Runs anywhere Docker runs
-
----
-
-## Troubleshooting
-
-### TailTunnel won't start
-
-Check the logs:
-```bash
-docker logs tailtunnel
-```
-
-Common issues:
-- **"Invalid auth key"** - Your auth key expired or is incorrect
-- **"Permission denied"** - Add `--cap-add=NET_ADMIN` to docker run command
-- **"Port already in use"** - Change the port: `-p 8081:8080`
-
-### No machines showing up
-
-Make sure your machines:
-1. Are online in Tailscale
-2. Have SSH enabled
-3. Are on the same tailnet as TailTunnel
-
-Check if SSH is enabled on a machine:
-```bash
-tailscale status
-```
-
-Look for machines with "ssh" in their hostinfo.
-
-### Can't connect to a machine
-
-Verify SSH is working:
-```bash
-tailscale ssh username@machine-name
-```
-
-If this doesn't work, TailTunnel won't be able to connect either.
-
-### Container keeps restarting
-
-Check if you're running as the correct user:
-```bash
-docker exec tailtunnel id
-```
-
-The container runs as user `tailtunnel` (uid 1000) for security.
-
----
-
-## Security Considerations
-
-### How TailTunnel Connects
-
-- Uses Tailscale's built-in authentication
-- All traffic encrypted through Tailscale
-- SSH connections proxied through WebSocket
-- No external access - only accessible on your tailnet
-
-### Default Connection Settings
-
-- Connects as `root` user by default
-- SSH host key verification disabled (Tailscale provides authentication)
-- Only accessible from within your Tailscale network
-
-### Best Practices
-
-1. Use reusable auth keys with short expiration
-2. Run TailTunnel on a trusted machine
-3. Limit SSH access using Tailscale ACLs
-4. Regularly update to the latest version
-
----
-
-## For Developers
-
-### Architecture
-
-- **Backend**: Go with tsnet (embedded Tailscale node)
-- **Frontend**: SvelteKit with Tailwind CSS
-- **Terminal**: xterm.js with WebSocket
-- **Build**: Multi-stage Docker build
-
-### Project Structure
-
-```
-tailtunnel/
-├── cmd/tailtunnel/       # Application entry point
-├── internal/
-│   ├── api/              # HTTP handlers and routing
-│   ├── ssh/              # SSH WebSocket proxy
-│   └── tailscale/        # Tailscale client wrapper
-├── frontend/             # SvelteKit web interface
-├── .github/workflows/    # CI/CD pipelines
-└── Dockerfile            # Multi-arch container build
-```
-
-### CI/CD
-
-TailTunnel uses GitHub Actions for:
-- Automated testing on pull requests
-- Multi-architecture builds (amd64, arm64)
-- Container image signing with Cosign
-- SBOM generation
-- Automated releases
-
-See `.github/workflows/` for details.
-
-### Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Author
-
-Created by Raj Singh ([@rajsinghtech](https://github.com/rajsinghtech))
-
----
-
-## Links
-
-- **GitHub**: https://github.com/rajsinghtech/tailtunnel
-- **Issues**: https://github.com/rajsinghtech/tailtunnel/issues
-- **Tailscale**: https://tailscale.com
