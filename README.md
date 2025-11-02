@@ -49,7 +49,13 @@ The easiest way to run TailTunnel on macOS is with our native menu bar app:
 **Option 1: Download Release**
 1. Download `TailTunnel.zip` from the [latest release](https://github.com/rajsinghtech/tailtunnel/releases/latest)
 2. Unzip and drag `TailTunnel.app` to your `/Applications` folder
-3. Launch the app and configure your Tailscale auth key in Settings
+3. Remove Gatekeeper quarantine (app is unsigned):
+   ```bash
+   xattr -cr /Applications/TailTunnel.app
+   ```
+4. Launch the app and configure your Tailscale auth key in Settings
+
+> **Note:** If you see a "damaged" error, run the `xattr` command above to bypass macOS Gatekeeper.
 
 **Option 2: Build from Source**
 ```bash

@@ -19,7 +19,13 @@ TailTunnel is available as a native macOS menu bar application. The app runs in 
 1. Download `TailTunnel.zip` from the [latest release](https://github.com/rajsinghtech/tailtunnel/releases/latest)
 2. Unzip the file
 3. Drag `TailTunnel.app` to your `/Applications` folder
-4. Right-click the app and select "Open" (first time only, due to macOS Gatekeeper)
+4. **Remove Gatekeeper quarantine** (the app is not code signed):
+   ```bash
+   xattr -cr /Applications/TailTunnel.app
+   ```
+5. Launch the app from your Applications folder
+
+**Note:** TailTunnel is currently unsigned. The `xattr -cr` command removes the quarantine flag that macOS adds to downloaded apps, allowing it to run. If you see a "damaged" error, this is macOS Gatekeeper blocking the unsigned app - the command above fixes this.
 
 #### Option 2: Build from Source
 
@@ -68,6 +74,24 @@ rm -rf ~/.tailtunnel
 See the main [README.md](README.md#quick-start) for Docker installation instructions.
 
 ## Troubleshooting
+
+### "Damaged" or "Can't be opened" error
+
+This is macOS Gatekeeper blocking the unsigned app. Fix it with:
+```bash
+xattr -cr /Applications/TailTunnel.app
+```
+
+If you still see issues, try:
+```bash
+# Remove the app
+rm -rf /Applications/TailTunnel.app
+
+# Re-extract from the ZIP
+unzip TailTunnel.zip
+xattr -cr TailTunnel.app
+mv TailTunnel.app /Applications/
+```
 
 ### App won't start
 - Check Console.app for error messages

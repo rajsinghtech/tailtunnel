@@ -60,8 +60,13 @@ jobs:
             1. Download `TailTunnel.zip`
             2. Unzip the file
             3. Drag `TailTunnel.app` to your `/Applications` folder
-            4. Right-click and select "Open" (first time only)
-            5. Configure your Tailscale auth key in Settings
+            4. **Remove Gatekeeper quarantine** (app is unsigned):
+               ```bash
+               xattr -cr /Applications/TailTunnel.app
+               ```
+            5. Launch the app and configure your Tailscale auth key in Settings
+
+            > **Important:** If you see a "damaged" or "can't be opened" error, run the `xattr` command above. This is macOS Gatekeeper blocking the unsigned app.
 
             ### What's New
 
