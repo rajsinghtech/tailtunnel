@@ -1,0 +1,55 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - sh -c "cd frontend && npm install --legacy-peer-deps && npm run build"
+
+builds:
+  - id: tailtunnel
+    main: ./cmd/tailtunnel
+    binary: tailtunnel
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - "-s -w"
+      - "-X main.Version={{.Version}}"
+
+archives:
+  - id: tailtunnel
+    format: tar.gz
+    builds:
+      - tailtunnel
+    name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+brews:
+  - name: tailtunnel
+    repository:
+      owner: rajsinghtech
+      name: homebrew-tap
+    commit_author:
+      name: Raj Singh
+      email: rajsinghcpre@gmail.com
+    directory: Formula
+    homepage: "https://github.com/rajsinghtech/tailtunnel"
+    description: "A web dashboard for your Tailscale network with browser-based SSH and network diagnostics"
+    license: "MIT"
+    dependencies:
+      - name: node
+        type: build

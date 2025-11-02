@@ -42,6 +42,26 @@ TailTunnel is a web dashboard for your Tailscale network. Connect to machines vi
 
 ## Quick Start
 
+### Homebrew (macOS/Linux)
+
+Install TailTunnel CLI via Homebrew:
+
+```bash
+brew install rajsinghtech/tap/tailtunnel
+```
+
+Once installed, you can run:
+```bash
+tailtunnel
+```
+
+Configure with environment variables:
+```bash
+export TS_AUTHKEY=your-tailscale-auth-key
+export PORT=8080
+tailtunnel
+```
+
 ### macOS Menu Bar App
 
 The easiest way to run TailTunnel on macOS is with our native menu bar app:
