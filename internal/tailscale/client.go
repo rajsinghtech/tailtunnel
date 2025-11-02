@@ -178,6 +178,33 @@ func (tc *TailscaleClient) Logout(ctx context.Context) error {
 	return tc.lc.Logout(ctx)
 }
 
+func (tc *TailscaleClient) DeleteDevice(ctx context.Context) error {
+	// First logout to expire the session
+	if err := tc.lc.Logout(ctx); err != nil {
+		return fmt.Errorf("failed to logout: %w", err)
+	}
+
+	// Close the server connection
+	if err := tc.server.Close(); err != nil {
+		return fmt.Errorf("failed to close server: %w", err)
+	}
+
+	// Remove the state directory to fully cleanup
+	stateDir := tc.server.Dir
+	if stateDir != "" {
+		if err := os.RemoveAll(stateDir); err != nil {
+			return fmt.Errorf("failed to remove state directory: %w", err)
+		}
+		log.Printf("Removed state directory: %s", stateDir)
+	}
+
+	// Note: The device will still appear in the Tailscale admin console as "expired"
+	// To fully remove it, you need to delete it from the admin console or use the Tailscale API
+	// with proper API credentials
+
+	return nil
+}
+
 func (tc *TailscaleClient) AuthURL() <-chan string {
 	return tc.authURLChan
 }
