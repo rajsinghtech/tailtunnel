@@ -252,7 +252,15 @@ func (tc *TailscaleClient) Close() error {
 func getStateDir() string {
 	stateDir := os.Getenv("STATE_DIR")
 	if stateDir == "" {
-		stateDir = "/var/lib/tailtunnel"
+		// Use user's home directory by default for better UX
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			stateDir = homeDir + "/.tailtunnel/state"
+			// Create directory if it doesn't exist
+			os.MkdirAll(stateDir, 0700)
+		} else {
+			// Fallback to /var/lib/tailtunnel (requires elevated permissions)
+			stateDir = "/var/lib/tailtunnel"
+		}
 	}
 	return stateDir
 }

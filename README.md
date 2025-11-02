@@ -29,16 +29,6 @@ TailTunnel is a web dashboard for your Tailscale network. Connect to machines vi
 - **Device Info** - View NAT type, online status, and system information
 - **Quick Search** - Filter machines by name, user, tag, or connection type
 - **Responsive Design** - Works on desktop, tablet, and mobile
-- **OAuth Login** - No auth keys required for the macOS app
-
-### What You Get
-
-- **SSH Machines**: Tiled grid view with one-click terminal access
-- **TailCanary**: Network diagnostics with latency tracking and connection type visualization
-- **Real-time Status**: Live online/offline status and connection quality
-- **Historical Data**: Latency graphs showing connection performance over time
-- **Smart Filtering**: Search across all attributes including connection types
-- **HTTPS on Tailnet**: Automatic HTTPS with valid certificates when available
 
 ---
 
@@ -67,13 +57,6 @@ brew install --cask rajsinghtech/tap/tailtunnel
 4. Click "Login to Tailscale" - your browser will open automatically
 5. Authenticate in your browser
 6. Click "Open Dashboard" when connected
-
-**Features:**
-- OAuth login (no auth keys!)
-- Lives in your menu bar
-- Auto-opens browser for authentication
-- Serves on your tailnet with HTTPS
-- Configurable hostname
 
 **Configuration:**
 Settings stored at `~/.tailtunnel/config.json`:
@@ -165,6 +148,8 @@ Or with OAuth (opens browser):
 tailtunnel  # Browser will open for authentication
 ```
 
+**State directory:** By default, state is stored in `~/.tailtunnel/state`. You can override this with the `STATE_DIR` environment variable.
+
 ### Build from Source
 
 #### Prerequisites
@@ -209,8 +194,8 @@ Configure using environment variables:
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `TS_AUTHKEY` | Tailscale auth key | - | Yes (Docker/headless) |
-| `STATE_DIR` | Tailscale state directory | `/var/lib/tailtunnel` | No |
+| `TS_AUTHKEY` | Tailscale auth key | - | No (uses OAuth if not set) |
+| `STATE_DIR` | Tailscale state directory | `~/.tailtunnel/state` (CLI)<br>`/var/lib/tailtunnel` (Docker) | No |
 
 **Note:** The macOS app uses OAuth and doesn't need an auth key. For Docker/CLI, you can omit `TS_AUTHKEY` to use OAuth (opens browser).
 
