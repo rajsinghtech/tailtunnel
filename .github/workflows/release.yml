@@ -79,6 +79,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
           sbom: false
+          no-cache: true
 
       - name: Install cosign
         if: startsWith(github.ref, 'refs/tags/')
