@@ -125,4 +125,11 @@ docker-clean: ## Clean Docker images and volumes
 	docker-compose down -v
 	docker rmi tailtunnel:latest 2>/dev/null || true
 
+build-macos-app: build-frontend ## Build the macOS menu bar app
+	@echo "Building macOS app..."
+	@mkdir -p TailTunnel.app/Contents/{MacOS,Resources}
+	@go build -o TailTunnel.app/Contents/MacOS/TailTunnel -ldflags="-s -w" ./cmd/tailtunnel-menubar
+	@echo "macOS app built at: TailTunnel.app"
+	@echo "To install: cp -r TailTunnel.app /Applications/"
+
 .DEFAULT_GOAL := help

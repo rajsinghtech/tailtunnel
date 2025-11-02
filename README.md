@@ -42,7 +42,28 @@ TailTunnel is a web dashboard for your Tailscale network. Connect to machines vi
 
 ## Quick Start
 
-The fastest way to get started is with Docker.
+### macOS Menu Bar App
+
+The easiest way to run TailTunnel on macOS is with our native menu bar app:
+
+**Option 1: Download Release**
+1. Download `TailTunnel.zip` from the [latest release](https://github.com/rajsinghtech/tailtunnel/releases/latest)
+2. Unzip and drag `TailTunnel.app` to your `/Applications` folder
+3. Launch the app and configure your Tailscale auth key in Settings
+
+**Option 2: Build from Source**
+```bash
+git clone https://github.com/rajsinghtech/tailtunnel.git
+cd tailtunnel
+make build-macos-app
+cp -r TailTunnel.app /Applications/
+```
+
+See [INSTALL.md](INSTALL.md) for detailed installation instructions.
+
+### Docker
+
+The fastest way to get started with Docker:
 
 ### Step 1: Get a Tailscale Auth Key
 
