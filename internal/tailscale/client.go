@@ -196,7 +196,14 @@ func (tc *TailscaleClient) ListenHTTPS(handler http.Handler) error {
 	}
 
 	enableHTTPS := status.Self.HasCap(tailcfg.CapabilityHTTPS) && len(tc.server.CertDomains()) > 0
-	fqdn := strings.TrimSuffix(status.Self.DNSName, ".")
+
+	// Get the actual FQDN from CertDomains (the tsnet server's domain, not the user's machine)
+	var fqdn string
+	if certDomains := tc.server.CertDomains(); len(certDomains) > 0 {
+		fqdn = certDomains[0]
+	} else {
+		fqdn = strings.TrimSuffix(status.Self.DNSName, ".")
+	}
 
 	if enableHTTPS {
 		httpsListener, err := tc.server.ListenTLS("tcp", ":443")
