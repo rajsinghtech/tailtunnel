@@ -112,78 +112,20 @@ jobs:
           name: sbom
           path: sbom.spdx.json
 
-  create-github-release:
-    name: Create GitHub Release
+  attach-to-release:
+    name: Attach SBOM to Release
     needs: build-and-push
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Download SBOM
         uses: actions/download-artifact@v4
         with:
           name: sbom
 
-      - name: Create Release
+      - name: Attach SBOM to Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
           files: sbom.spdx.json
-          body: |
-            ## Installation
-
-            ### Docker
-
-            Pull the multi-arch image:
-            ```bash
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
-            ```
-
-            ### Docker Compose
-
-            ```yaml
-            services:
-              tailtunnel:
-                image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
-                container_name: tailtunnel
-                restart: unless-stopped
-                ports:
-                  - "8080:8080"
-                environment:
-                  - TS_AUTHKEY=${TS_AUTHKEY}
-                volumes:
-                  - tailtunnel-state:/var/lib/tailtunnel
-                cap_add:
-                  - NET_ADMIN
-
-            volumes:
-              tailtunnel-state:
-            ```
-
-            ### Run with Docker
-
-            ```bash
-            docker run -d \
-              --name tailtunnel \
-              --cap-add=NET_ADMIN \
-              -p 8080:8080 \
-              -e TS_AUTHKEY=your-key-here \
-              -v tailtunnel-state:/var/lib/tailtunnel \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.version }}
-            ```
-
-            ## Verification
-
-            The container image has been signed with Cosign and includes an SBOM.
-
-            Verify signature:
-            ```bash
-            cosign verify \
-              --certificate-identity-regexp="https://github.com/${{ github.repository }}" \
-              --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-            ```

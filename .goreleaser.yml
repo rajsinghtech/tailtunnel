@@ -45,11 +45,26 @@ release:
     ```
 
     ### Docker
+
+    Pull the multi-arch image:
     ```bash
     docker pull ghcr.io/rajsinghtech/tailtunnel:{{ .Tag }}
     ```
 
+    Run with Docker:
+    ```bash
+    docker run -d \
+      --name tailtunnel \
+      -e TS_AUTHKEY=your-key-here \
+      -v tailtunnel-state:/var/lib/tailtunnel \
+      ghcr.io/rajsinghtech/tailtunnel:{{ .Tag }}
+    ```
+
     See the [README](https://github.com/rajsinghtech/tailtunnel) for more installation options.
+
+    ## Verification
+
+    The container image has been signed with Cosign and includes an SBOM (attached to this release).
 
     ## What's New
 
