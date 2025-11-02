@@ -45,55 +45,13 @@ jobs:
             TailTunnel.zip
             TailTunnel.zip.sha256
 
-      - name: Create Release
+      - name: Attach to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
             TailTunnel.zip
             TailTunnel.zip.sha256
-          body: |
-            ## TailTunnel macOS App
-
-            ### Installation
-
-            **Option 1: Homebrew Cask (Easiest)**
-            ```bash
-            brew install --cask rajsinghtech/tap/tailtunnel
-            ```
-
-            **Option 2: Manual Download**
-            1. Download `TailTunnel.zip`
-            2. Unzip the file
-            3. Drag `TailTunnel.app` to your `/Applications` folder
-            4. **Remove Gatekeeper quarantine** (app is unsigned):
-               ```bash
-               xattr -cr /Applications/TailTunnel.app
-               ```
-            5. Launch the app and configure your Tailscale auth key in Settings
-
-            > **Important:** If you see a "damaged" or "can't be opened" error, run the `xattr` command above. This is macOS Gatekeeper blocking the unsigned app.
-
-            ### What's New
-
-            Native macOS menu bar app with:
-            - Start/Stop server controls
-            - One-click dashboard access
-            - Native settings dialog
-            - Persistent configuration
-
-            ### Verification
-
-            SHA256 checksum available in `TailTunnel.zip.sha256`
-
-            ### Docker Image
-
-            Docker images are also available:
-            ```bash
-            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ```
-
-            See the [README](https://github.com/${{ github.repository }}) for more installation options.
 
       - name: Update Homebrew Cask
         if: startsWith(github.ref, 'refs/tags/')

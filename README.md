@@ -44,7 +44,14 @@ TailTunnel is a web dashboard for your Tailscale network. Connect to machines vi
 
 ## Quick Start
 
-### macOS Menu Bar App (Recommended)
+**Two ways to run TailTunnel:**
+- **macOS App** (`brew install --cask`) - GUI menu bar app with OAuth login
+- **CLI Binary** (`brew install`) - Command-line tool for servers/headless systems
+- **Docker** - Containerized deployment for always-on servers
+
+Choose the method that best fits your needs below.
+
+### macOS Menu Bar App (Recommended for Desktop)
 
 The easiest way to run TailTunnel on macOS - no auth keys needed!
 
@@ -139,9 +146,9 @@ You'll see:
 - **TailCanary**: Real-time network diagnostics with ping monitoring and latency graphs
 - **SSH Machines**: All your SSH-enabled machines with one-click terminal access
 
-### Homebrew CLI (macOS/Linux)
+### CLI Binary via Homebrew (macOS/Linux)
 
-For headless servers or scripting:
+For headless servers, scripting, or if you prefer command-line tools:
 
 ```bash
 brew install rajsinghtech/tap/tailtunnel
