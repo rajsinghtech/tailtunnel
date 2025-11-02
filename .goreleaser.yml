@@ -23,9 +23,7 @@ builds:
 
 archives:
   - id: tailtunnel
-    format: tar.gz
     name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
-    rlcp: true
     files:
       - LICENSE
       - README.md
@@ -37,8 +35,8 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Use the new homebrews syntax instead of brews
-homebrews:
+# Use the new syntax for Homebrew formulas
+brews:
   - name: tailtunnel
     repository:
       owner: rajsinghtech
