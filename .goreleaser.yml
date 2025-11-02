@@ -35,8 +35,8 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Migrate to homebrew_casks (replaces deprecated brews)
-homebrew_casks:
+# CLI binary formula (macOS app cask is handled by build-macos.yml workflow)
+brews:
   - name: tailtunnel
     ids:
       - tailtunnel
@@ -48,7 +48,7 @@ homebrew_casks:
       name: Raj Singh
       email: rajsinghcpre@gmail.com
     homepage: "https://github.com/rajsinghtech/tailtunnel"
-    description: "A web dashboard for your Tailscale network with browser-based SSH and network diagnostics"
+    description: "A web dashboard for Tailscale with browser-based SSH and network diagnostics"
     license: "MIT"
     dependencies:
-      - formula: node
+      - name: node
