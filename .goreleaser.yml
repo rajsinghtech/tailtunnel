@@ -51,4 +51,4 @@ homebrew_casks:
     description: "A web dashboard for your Tailscale network with browser-based SSH and network diagnostics"
     license: "MIT"
     dependencies:
-      - name: node
+      - formula: node
