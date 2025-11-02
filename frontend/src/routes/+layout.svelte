@@ -141,7 +141,12 @@
 
 	<!-- Mobile sidebar -->
 	{#if sidebarOpen}
-		<div class="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onclick={() => sidebarOpen = false}></div>
+		<button
+			class="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+			onclick={() => sidebarOpen = false}
+			aria-label="Close sidebar"
+			type="button"
+		></button>
 		<aside class="md:hidden fixed left-0 top-[57px] bottom-0 z-50 w-64 bg-card border-r flex flex-col">
 			<nav class="flex-1 p-4">
 				<ul class="space-y-2">

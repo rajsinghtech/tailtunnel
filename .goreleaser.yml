@@ -24,12 +24,11 @@ builds:
 archives:
   - id: tailtunnel
     format: tar.gz
-    builds:
-      - tailtunnel
     name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
+    rlcp: true
+    files:
+      - LICENSE
+      - README.md
 
 changelog:
   sort: asc
@@ -38,7 +37,8 @@ changelog:
       - "^docs:"
       - "^test:"
 
-brews:
+# Use the new homebrews syntax instead of brews
+homebrews:
   - name: tailtunnel
     repository:
       owner: rajsinghtech
