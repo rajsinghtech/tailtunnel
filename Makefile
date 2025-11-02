@@ -128,6 +128,8 @@ docker-clean: ## Clean Docker images and volumes
 build-macos-app: build-frontend ## Build the macOS menu bar app
 	@echo "Building macOS app..."
 	@mkdir -p TailTunnel.app/Contents/{MacOS,Resources}
+	@cp resources/Info.plist TailTunnel.app/Contents/
+	@cp resources/TailTunnel.icns TailTunnel.app/Contents/Resources/
 	@go build -o TailTunnel.app/Contents/MacOS/TailTunnel -ldflags="-s -w" ./cmd/tailtunnel-menubar
 	@echo "macOS app built at: TailTunnel.app"
 	@echo "To install: cp -r TailTunnel.app /Applications/"

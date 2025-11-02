@@ -45,4 +45,6 @@ dist/
 
 # macOS App
 TailTunnel.app/
+TailTunnel.iconset/
 *.zip
+*.sha256
