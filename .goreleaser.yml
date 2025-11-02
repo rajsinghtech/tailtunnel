@@ -35,9 +35,11 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Use the new syntax for Homebrew formulas
-brews:
+# Migrate to homebrew_casks (replaces deprecated brews)
+homebrew_casks:
   - name: tailtunnel
+    ids:
+      - tailtunnel
     repository:
       owner: rajsinghtech
       name: homebrew-tap
@@ -45,10 +47,8 @@ brews:
     commit_author:
       name: Raj Singh
       email: rajsinghcpre@gmail.com
-    directory: Formula
     homepage: "https://github.com/rajsinghtech/tailtunnel"
     description: "A web dashboard for your Tailscale network with browser-based SSH and network diagnostics"
     license: "MIT"
     dependencies:
       - name: node
-        type: build
