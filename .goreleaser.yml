@@ -28,6 +28,31 @@ archives:
       - LICENSE
       - README.md
 
+release:
+  header: |
+    ## Installation
+
+    ### macOS App (Recommended for Desktop)
+    ```bash
+    brew install --cask rajsinghtech/tap/tailtunnel
+    ```
+
+    Or download `TailTunnel.zip` manually, unzip, and drag to `/Applications`.
+
+    ### CLI Binary (Servers/Headless)
+    ```bash
+    brew install rajsinghtech/tap/tailtunnel
+    ```
+
+    ### Docker
+    ```bash
+    docker pull ghcr.io/rajsinghtech/tailtunnel:{{ .Tag }}
+    ```
+
+    See the [README](https://github.com/rajsinghtech/tailtunnel) for more installation options.
+
+    ## What's New
+
 changelog:
   sort: asc
   filters:
