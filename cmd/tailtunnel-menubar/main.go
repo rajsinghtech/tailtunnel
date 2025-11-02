@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -24,10 +25,11 @@ type Settings struct {
 }
 
 var (
-	settings      *Settings
-	ts            *tailscale.TailscaleClient
-	serverRunning bool
+	settings        *Settings
+	ts              *tailscale.TailscaleClient
+	serverRunning   bool
 	loginInProgress bool
+	authURLOpened   bool
 )
 
 func main() {
@@ -99,7 +101,7 @@ func onReady() {
 
 				if err == nil && status != nil {
 					if status.BackendState == "Running" {
-						fqdn := status.Self.DNSName
+						fqdn := strings.TrimSuffix(status.Self.DNSName, ".")
 						mStatus.SetTitle(fmt.Sprintf("Status: Connected (%s)", fqdn))
 						systray.SetTooltip(fmt.Sprintf("TailTunnel - Connected to %s", fqdn))
 						mOpen.Enable()
@@ -114,19 +116,6 @@ func onReady() {
 		}
 	}()
 
-	// Monitor for auth URLs
-	go func() {
-		if ts == nil {
-			return
-		}
-		for authURL := range ts.AuthURL() {
-			showInfo("Tailscale Login Required",
-				fmt.Sprintf("Opening browser to complete login...\n\n%s", authURL))
-			if err := browser.OpenURL(authURL); err != nil {
-				log.Printf("Failed to open browser: %v", err)
-			}
-		}
-	}()
 }
 
 func onExit() {
@@ -208,6 +197,25 @@ func startServer() error {
 	handler := api.NewHandler(ts)
 	router := api.NewRouter(handler, tailtunnel.FrontendFS)
 
+	// Monitor for auth URLs (only open once)
+	go func() {
+		for authURL := range ts.AuthURL() {
+			log.Printf("Auth URL received: %s", authURL)
+			if !authURLOpened {
+				authURLOpened = true
+				log.Printf("Opening browser for first time: %s", authURL)
+				// Silently open browser without blocking dialog
+				if err := browser.OpenURL(authURL); err != nil {
+					log.Printf("Failed to open browser: %v", err)
+					// Only show error if browser fails to open
+					showError("Browser Error", fmt.Sprintf("Could not open browser. Please visit:\n\n%s", authURL))
+				}
+			} else {
+				log.Printf("Auth URL already opened, skipping duplicate")
+			}
+		}
+	}()
+
 	// Start server on tailnet (with HTTPS if available)
 	go func() {
 		log.Println("Starting server on tailnet...")
@@ -229,27 +237,36 @@ func stopServer() {
 }
 
 func handleLogin() {
+	log.Println("=== handleLogin called ===")
 	loginInProgress = true
-	defer func() { loginInProgress = false }()
+	defer func() {
+		loginInProgress = false
+		log.Println("=== handleLogin finished ===")
+	}()
 
 	if ts == nil {
+		log.Println("ts is nil, starting server...")
 		if err := startServer(); err != nil {
+			log.Printf("Failed to start server: %v", err)
 			showError("Login Failed", fmt.Sprintf("Failed to start: %v", err))
 			return
 		}
+		log.Println("Server started successfully")
 	}
 
-	showInfo("Logging in...", "Waiting for Tailscale authentication...")
-
+	// Don't block with a dialog - just wait in background
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
+	log.Println("Calling WaitForLogin...")
 	if err := ts.WaitForLogin(ctx); err != nil {
+		log.Printf("WaitForLogin failed: %v", err)
 		showError("Login Failed", fmt.Sprintf("Authentication failed: %v", err))
 		return
 	}
 
-	showInfo("Login Successful", "You are now connected to your Tailscale network!")
+	log.Println("Login successful!")
+	// Status monitoring will automatically update the menu when connected
 }
 
 func handleLogout() {
@@ -266,6 +283,7 @@ func handleLogout() {
 	}
 
 	stopServer()
+	authURLOpened = false // Reset for next login
 	showInfo("Logged Out", "You have been logged out of Tailscale.")
 }
 
@@ -285,10 +303,11 @@ func openDashboard() {
 	}
 
 	// Try HTTPS first
-	url := fmt.Sprintf("https://%s", status.Self.DNSName)
+	fqdn := strings.TrimSuffix(status.Self.DNSName, ".")
+	url := fmt.Sprintf("https://%s/", fqdn)
 	if err := browser.OpenURL(url); err != nil {
 		// Fallback to HTTP
-		url = fmt.Sprintf("http://%s", status.Self.DNSName)
+		url = fmt.Sprintf("http://%s/", fqdn)
 		if err := browser.OpenURL(url); err != nil {
 			showError("Failed to Open Browser", fmt.Sprintf("Could not open browser: %v\n\nPlease visit: %s", err, url))
 		}

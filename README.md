@@ -29,6 +29,7 @@ TailTunnel is a web dashboard for your Tailscale network. Connect to machines vi
 - **Device Info** - View NAT type, online status, and system information
 - **Quick Search** - Filter machines by name, user, tag, or connection type
 - **Responsive Design** - Works on desktop, tablet, and mobile
+- **OAuth Login** - No auth keys required for the macOS app
 
 ### What You Get
 
@@ -37,133 +38,127 @@ TailTunnel is a web dashboard for your Tailscale network. Connect to machines vi
 - **Real-time Status**: Live online/offline status and connection quality
 - **Historical Data**: Latency graphs showing connection performance over time
 - **Smart Filtering**: Search across all attributes including connection types
+- **HTTPS on Tailnet**: Automatic HTTPS with valid certificates when available
 
 ---
 
 ## Quick Start
 
-### Homebrew (macOS/Linux)
+### macOS Menu Bar App (Recommended)
 
-Install TailTunnel CLI via Homebrew:
+The easiest way to run TailTunnel on macOS - no auth keys needed!
 
-```bash
-brew install rajsinghtech/tap/tailtunnel
-```
-
-Once installed, you can run:
-```bash
-tailtunnel
-```
-
-Configure with environment variables:
-```bash
-export TS_AUTHKEY=your-tailscale-auth-key
-export PORT=8080
-tailtunnel
-```
-
-### macOS Menu Bar App
-
-The easiest way to run TailTunnel on macOS is with our native menu bar app:
-
-**Option 1: Homebrew Cask (Recommended)**
+**Install via Homebrew:**
 ```bash
 brew install --cask rajsinghtech/tap/tailtunnel
 ```
 
-**Option 2: Download Release**
-1. Download `TailTunnel.zip` from the [latest release](https://github.com/rajsinghtech/tailtunnel/releases/latest)
-2. Unzip and drag `TailTunnel.app` to your `/Applications` folder
-3. Remove Gatekeeper quarantine (app is unsigned):
-   ```bash
-   xattr -cr /Applications/TailTunnel.app
-   ```
-4. Launch the app and configure your Tailscale auth key in Settings
+**Or download manually:**
+1. Download `TailTunnel.zip` from [releases](https://github.com/rajsinghtech/tailtunnel/releases/latest)
+2. Unzip and drag `TailTunnel.app` to `/Applications`
+3. Launch the app
+4. Click "Login to Tailscale" - your browser will open automatically
+5. Authenticate in your browser
+6. Click "Open Dashboard" when connected
 
-> **Note:** If you see a "damaged" error, run the `xattr` command above to bypass macOS Gatekeeper.
+**Features:**
+- OAuth login (no auth keys!)
+- Lives in your menu bar
+- Auto-opens browser for authentication
+- Serves on your tailnet with HTTPS
+- Configurable hostname
 
-**Option 3: Build from Source**
+**Configuration:**
+Settings stored at `~/.tailtunnel/config.json`:
+- Hostname (default: `tailtunnel`)
+- State directory (default: `~/.tailtunnel/state`)
+
+**Uninstall:**
 ```bash
-git clone https://github.com/rajsinghtech/tailtunnel.git
-cd tailtunnel
-make build-macos-app
-cp -r TailTunnel.app /Applications/
+brew uninstall --cask tailtunnel
+# Or manually:
+rm -rf /Applications/TailTunnel.app ~/.tailtunnel
 ```
-
-See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
 ### Docker
 
-The fastest way to get started with Docker:
+Perfect for servers and always-on deployments.
 
-### Step 1: Get a Tailscale Auth Key
+**Step 1: Get a Tailscale Auth Key**
 
 1. Go to https://login.tailscale.com/admin/settings/keys
 2. Click "Generate auth key"
 3. Copy the key (starts with `tskey-auth-`)
 
-### Step 2: Run TailTunnel
+**Step 2: Run with Docker**
 
 ```bash
 docker run -d \
   --name tailtunnel \
-  --cap-add=NET_ADMIN \
-  -p 8080:8080 \
   -e TS_AUTHKEY=your-key-here \
+  -v tailtunnel-state:/var/lib/tailtunnel \
   ghcr.io/rajsinghtech/tailtunnel:latest
 ```
 
-Replace `your-key-here` with the auth key from Step 1.
+**Or with Docker Compose:**
 
-### Step 3: Access the Dashboard
-
-Open your browser and go to:
-```
-http://localhost:8080
-```
-
-You'll see two main features:
-- **TailCanary**: Real-time network diagnostics with ping monitoring and latency graphs
-- **SSH Machines**: All your SSH-enabled machines with one-click terminal access
-
----
-
-## Alternative Installation Methods
-
-### Using Docker Compose
-
-1. Create a `.env` file:
-```bash
-TS_AUTHKEY=your-tailscale-auth-key
-PORT=8080
-```
-
-2. Create `docker-compose.yml`:
+Create `docker-compose.yml`:
 ```yaml
 services:
   tailtunnel:
     image: ghcr.io/rajsinghtech/tailtunnel:latest
     container_name: tailtunnel
     restart: unless-stopped
-    ports:
-      - "${PORT:-8080}:8080"
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
     volumes:
       - tailtunnel-state:/var/lib/tailtunnel
-    cap_add:
-      - NET_ADMIN
 
 volumes:
   tailtunnel-state:
 ```
 
-3. Start the service:
+Create `.env`:
+```bash
+TS_AUTHKEY=your-tailscale-auth-key
+```
+
+Start:
 ```bash
 docker-compose up -d
 ```
 
-### Building from Source
+**Step 3: Access the Dashboard**
+
+TailTunnel serves on your tailnet with automatic HTTPS:
+```
+https://tailtunnel.your-tailnet.ts.net/
+```
+
+You'll see:
+- **TailCanary**: Real-time network diagnostics with ping monitoring and latency graphs
+- **SSH Machines**: All your SSH-enabled machines with one-click terminal access
+
+### Homebrew CLI (macOS/Linux)
+
+For headless servers or scripting:
+
+```bash
+brew install rajsinghtech/tap/tailtunnel
+```
+
+Run with auth key:
+```bash
+export TS_AUTHKEY=your-tailscale-auth-key
+tailtunnel
+```
+
+Or with OAuth (opens browser):
+```bash
+tailtunnel  # Browser will open for authentication
+```
+
+### Build from Source
 
 #### Prerequisites
 - Go 1.25 or later
@@ -171,35 +166,56 @@ docker-compose up -d
 
 #### Build Steps
 
+**CLI binary:**
 ```bash
 git clone https://github.com/rajsinghtech/tailtunnel.git
 cd tailtunnel
-cp .env.example .env
-# Edit .env and add your Tailscale auth key
-make install
-make dev
+make build
+./tailtunnel
 ```
 
-The dashboard will be available at http://localhost:8080
+**macOS app:**
+```bash
+make build-macos-app
+cp -r TailTunnel.app /Applications/
+```
+
+**Docker image:**
+```bash
+docker build -t tailtunnel .
+```
 
 ---
 
 ## Configuration
 
-TailTunnel is configured using environment variables:
+### macOS App
+
+Configure via the Settings menu:
+- **Hostname**: Your tailnet hostname (default: `tailtunnel`)
+
+Settings stored at `~/.tailtunnel/config.json`
+
+### Docker / CLI
+
+Configure using environment variables:
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `TS_AUTHKEY` | Tailscale authentication key | - | Yes (first run) |
-| `PORT` | HTTP server port | 8080 | No |
-| `STATE_DIR` | Directory for Tailscale state | /var/lib/tailtunnel | No |
+| `TS_AUTHKEY` | Tailscale auth key | - | Yes (Docker/headless) |
+| `STATE_DIR` | Tailscale state directory | `/var/lib/tailtunnel` | No |
+
+**Note:** The macOS app uses OAuth and doesn't need an auth key. For Docker/CLI, you can omit `TS_AUTHKEY` to use OAuth (opens browser).
 
 ### Getting a Tailscale Auth Key
 
 1. Visit https://login.tailscale.com/admin/settings/keys
 2. Click "Generate auth key"
-3. Choose your expiration preference
+3. Choose reusable and no expiration for servers
 4. Copy the key
 
-You only need the auth key on the first run. After that, TailTunnel remembers your connection.
+---
 
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
