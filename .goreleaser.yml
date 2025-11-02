@@ -84,6 +84,7 @@ brews:
       owner: rajsinghtech
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    folder: Formula
     commit_author:
       name: Raj Singh
       email: rajsinghcpre@gmail.com
