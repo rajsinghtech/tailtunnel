@@ -98,7 +98,6 @@ docker-run: ## Run Docker container
 		exit 1; \
 	fi
 	docker run --rm -it \
-		--cap-add=NET_ADMIN \
 		-p $(PORT):8080 \
 		-e TS_AUTHKEY=$(TS_AUTHKEY) \
 		-e PORT=8080 \

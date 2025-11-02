@@ -2,7 +2,13 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import type { Snippet } from 'svelte';
 
+	interface Props {
+		children: Snippet;
+	}
+
+	let { children }: Props = $props();
 	let sidebarOpen = $state(false);
 
 	const navItems = [
@@ -204,6 +210,6 @@
 
 	<!-- Main content -->
 	<main class="flex-1 md:pt-0 pt-[57px]">
-		<slot />
+		{@render children()}
 	</main>
 </div>
